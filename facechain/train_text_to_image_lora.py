@@ -761,8 +761,13 @@ def main():
         print('All input images:', args.dataset_name)
         args.dataset_name = [os.path.join(args.dataset_name, x) for x in os.listdir(args.dataset_name)]
         shutil.rmtree(args.output_dataset_name, ignore_errors=True)
+        # note: 检查图片中的人脸是否需要旋转角度，矫正过的图片保存在process文件夹内
         prepare_dataset(args.dataset_name, args.output_dataset_name)
         ## Our data process fn
+        # note: 背后调用的是class Blipv2()的def __call__()
+        # 依次对图片进行：缩放、检测出人脸，将人脸矫正、缩放、裁剪出人脸区域、美肤、分割出人头区域、
+        # 人脸关键点检测（如果检测不出或置信度低于阈值，则跳过）、使用DeepDanbooru对原始图片打标签、
+        # 估计人脸属性（包括性别年龄，后处理会合并进标签里）、生成的结果位于processed_labeled文件夹
         data_process_fn(input_img_dir=args.output_dataset_name, use_data_process=True)
 
     args.dataset_name = args.output_dataset_name + '_labeled'
@@ -816,6 +821,7 @@ def main():
     model_dir = snapshot_download(args.pretrained_model_name_or_path,
                                   revision=args.revision,
                                   user_agent={'invoked_by': 'trainer', 'third_party': 'facechain'})
+    print(f"==>> model_dir: {model_dir}")
 
     if args.sub_path is not None and len(args.sub_path) > 0:
         model_dir = os.path.join(model_dir, args.sub_path)
@@ -1198,7 +1204,7 @@ def main():
         input_images_shape = None
         control_images=None
         input_masks = None
-
+    # note: 开始训练LoRA模型
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train()
         if args.train_text_encoder:
@@ -1354,6 +1360,7 @@ def main():
                 json.dump(lora_config, f)
         else:
             unet = unet.to(torch.float32)
+            # note: 使用diffusers的save_attn_procs保存LoRA模型权重，导出facechain/output/pytorch_lora_weights.bin
             unet.save_attn_procs(args.output_dir, safe_serialization=False)
 
         if args.merge_best_lora_based_face_id:

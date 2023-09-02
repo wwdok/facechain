@@ -117,10 +117,12 @@ def main_diffusion_inference(pos_prompt, neg_prompt,
     if style_model_path is None:
         model_dir = snapshot_download('Cherrytest/zjz_mj_jiyi_small_addtxt_fromleo', revision='v1.0.0')
         style_model_path = os.path.join(model_dir, 'zjz_mj_jiyi_small_addtxt_fromleo.safetensors')
+        print(f"==>> style_model_path: {style_model_path}") # /root/.cache/modelscope/hub/Cherrytest/zjz_mj_jiyi_small_addtxt_fromleo/zjz_mj_jiyi_small_addtxt_fromleo.safetensors
 
     pipe = StableDiffusionPipeline.from_pretrained(base_model_path, torch_dtype=torch.float32)
     lora_style_path = style_model_path
     lora_human_path = lora_model_path
+    # note: 将ly261666/cv_portrait_model这个基础模型，连同我们训练的人物LoRA模型和默认风格LoRA模型，三者的权重合并成一个新模型。
     pipe = merge_lora(pipe, lora_style_path, multiplier_style, from_safetensor=True)
     pipe = merge_lora(pipe, lora_human_path, multiplier_human, from_safetensor=lora_human_path.endswith('safetensors'))
     print(f'multiplier_style:{multiplier_style}, multiplier_human:{multiplier_human}')
@@ -172,6 +174,7 @@ def main_diffusion_inference(pos_prompt, neg_prompt,
         add_prompt_style = ''
 
     pipe = pipe.to("cuda")
+    # note: 万事具备，开始运行扩散模型生成10张候选图片
     images_style = txt2img(pipe, trigger_style + add_prompt_style + pos_prompt, neg_prompt, num_images=10)
     return images_style
 
@@ -471,6 +474,7 @@ class GenPortrait:
             base_model_path = os.path.join(base_model_path, sub_path)
 
         # main_model_inference PIL
+        # note: 内部会调用扩散模型生成10张候选图片
         gen_results = main_model_inference(self.pose_model_path, self.pose_image, self.use_depth_control,
                                            self.pos_prompt, self.neg_prompt,
                                            self.style_model_path, self.multiplier_style, self.multiplier_human,
@@ -478,10 +482,19 @@ class GenPortrait:
                                            lora_model_path=lora_model_path, base_model_path=base_model_path)
 
         # select_high_quality_face PIL
+        # note: 从processed_labeled文件夹内选择一张质量最好的抠出来的人头图片
         selected_face = select_high_quality_face(input_img_dir)
+        # note: 保存中间结果以便可视化
+        intermediate_folder = "./intermediate"
+        os.makedirs(intermediate_folder, exist_ok=True)
+        selected_face.save(os.path.join(intermediate_folder, "selected_face.jpg"))
+        for i, img in enumerate(gen_results):
+            img.save(os.path.join(intermediate_folder, f"{i}.jpg"))
         # face_swap cv2
+        # note: 将gen_results列表里的10张图片中的人脸都换成selected_face
         swap_results = face_swap_fn(self.use_face_swap, gen_results, selected_face)
         # pose_process
+        # 将10张换脸后的图片的embedding和selected_face的embedding作比较，选出跟selected_face最相似的num_gen_images张图片
         rank_results = post_process_fn(self.use_post_process, swap_results, selected_face,
                                        num_gen_images=num_gen_images)
         # stylization

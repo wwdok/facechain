@@ -1,7 +1,7 @@
 neg_prompt = 'nsfw, paintings, sketches, (worst quality:2), (low quality:2) ' \
              'lowers, normal quality, ((monochrome)), ((grayscale)), logo, word, character'
-pos_prompt_with_cloth = 'raw photo, masterpiece, chinese, {}, solo, medium shot, high detail face, looking straight into the camera with shoulders parallel to the frame, slim body, photorealistic, best quality'
-pos_prompt_with_style = '{}, upper_body, raw photo, masterpiece, solo, medium shot, high detail face, slim body, photorealistic, best quality'
+pos_prompt_with_cloth = 'raw photo, masterpiece, chinese, {}, solo, medium shot, high detail face, looking straight into the camera with shoulders parallel to the frame, photorealistic, best quality'
+pos_prompt_with_style = '{}, upper_body, raw photo, masterpiece, solo, medium shot, high detail face, photorealistic, best quality'
 
 base_models = [
     {'name': 'leosamsMoonfilm_filmGrain20',

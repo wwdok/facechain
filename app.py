@@ -31,6 +31,9 @@ class UploadTarget(enum.Enum):
 
 
 def update_cloth(style_index):
+    """
+    note: 根据指定的 风格模型索引 更新 服装风格、提示词、风格权重（需要点击高级选项展开才能看到）
+    """
     style = styles[style_index]
     prompts = []
     if style_index == 0:
@@ -49,6 +52,9 @@ def update_cloth(style_index):
 
 
 def update_prompt(style_index, cloth_index):
+    """
+    note: 根据选择的服装风格，更新高级选项->提示语，主要针对的是默认风格模型
+    """
     style = styles[style_index]
     if style_index == 0:
         pos_prompt = generate_pos_prompt(style['name'],
