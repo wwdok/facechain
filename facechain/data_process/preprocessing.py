@@ -337,7 +337,7 @@ class Blipv2():
 
         result_list = []
         imgs_list = []
-
+        # note: 选择最相似、最可能是同一个人的最多15张图片作为训练集
         ref_total_scores, ref_indexes, selected_paths = most_similar_faces_pick(imdir, self.face_detection, self.face_recognition, self.face_quality_func)
 
         # select top-15 photos for training
